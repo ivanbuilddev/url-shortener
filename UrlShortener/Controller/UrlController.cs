@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using UrlShortener.DTOs;
 using UrlShortener.Services;
 
 namespace UrlShortener.Controller;
@@ -16,21 +17,23 @@ public class UrlController : ControllerBase
         _urlService = urlService;
     }
 
+    [HttpGet("~/{slug}")]
     public async Task<IActionResult> Get(string slug)
     {
-        var url = await _urlService.GetShortUrl(slug);
+        string url = await _urlService.GetOriginalUrl(slug);
         if (string.IsNullOrEmpty(url))
         {
             return NotFound();
         }
-        return Ok(new { url });
+        await _urlService.UpdateCountUrl(slug);
+        return RedirectPermanent(url);
     }
 
     [HttpPost("create")]
     [EnableRateLimiting("create")]
-    public async Task<IActionResult> Create(string url)
+    public async Task<IActionResult> Create(CreateShortUrlRequest request)
     {
-        var slug = await _urlService.CreateShortUrl(url);
+        var slug = await _urlService.CreateShortUrl(request.OriginalUrl);
         return Ok(new { slug });
     }
 }

@@ -6,32 +6,81 @@ namespace UrlShortener.Repositories;
 
 public class UrlRepository : IUrlRepository
 {
-    private readonly AppDbContext _dbContext;
+    private readonly AppDbContext _context;
 
     public UrlRepository(AppDbContext dbContext)
     {
-        _dbContext = dbContext;
+        _context = dbContext;
     }
 
-    public async Task<string> GetShortUrl(string slug)
+    public async Task<string> GetShortUrl(string originalUrl)
     {
-        var shortUrl = await _dbContext.ShortUrls.FirstOrDefaultAsync(x => x.Slug == slug);
-        if (shortUrl == null)
+        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.OriginalUrl == originalUrl);
+        if (url == null)
         {
             return string.Empty;
         }
-        return shortUrl.OriginalUrl;
+        return url.Slug;
     }
 
-    public async Task<string> CreateShortUrl(string originalUrl)
+    public async Task<string> GetOriginalUrl(string slug)
+    {
+        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Slug == slug);
+        if (url == null)
+        {
+            return string.Empty;
+        }
+        return url.OriginalUrl;
+    }
+
+    public async Task<ShortUrl?> GetUrl(string slug)
+    {
+        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Slug == slug);
+        if (url == null)
+        {
+            return null;
+        }
+        return url;
+    }
+
+    public async Task<ShortUrl> CreateShortUrl(string originalUrl)
     {
         var shortUrl = new ShortUrl
         {
             OriginalUrl = originalUrl,
-            Slug = Guid.NewGuid().ToString()
+            Slug = ""
         };
-        await _dbContext.ShortUrls.AddAsync(shortUrl);
-        await _dbContext.SaveChangesAsync();
-        return shortUrl.Slug;
+        await _context.ShortUrls.AddAsync(shortUrl);
+        await _context.SaveChangesAsync();
+        return shortUrl;
     }
+
+    public async Task<ShortUrl> CreateShortUrl(string originalUrl, string slug)
+    {
+        var shortUrl = new ShortUrl
+        {
+            OriginalUrl = originalUrl,
+            Slug = slug
+        };
+        await _context.ShortUrls.AddAsync(shortUrl);
+        await _context.SaveChangesAsync();
+        return shortUrl;
+    }
+
+    public async Task<ShortUrl> UpdateShortUrl(ShortUrl shortUrl)
+    {
+        _context.ShortUrls.Update(shortUrl);
+        await _context.SaveChangesAsync();
+        return shortUrl;
+    }
+
+    public async Task<bool> ExistsOriginalUrl(string originalUrl)
+    {
+        return await _context.ShortUrls.AnyAsync(x => x.OriginalUrl == originalUrl);
+    }
+    public async Task<bool> ExistsShortUrl(string slug)
+    {
+        return await _context.ShortUrls.AnyAsync(x => x.Slug == slug);
+    }
+
 }
