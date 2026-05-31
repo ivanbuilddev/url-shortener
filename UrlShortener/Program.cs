@@ -38,7 +38,9 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+
 app.UseMiddleware<LoggingRequestMiddleware>();
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
 

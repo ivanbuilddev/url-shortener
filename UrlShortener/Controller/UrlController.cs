@@ -33,7 +33,11 @@ public class UrlController : ControllerBase
     [EnableRateLimiting("create")]
     public async Task<IActionResult> Create(CreateShortUrlRequest request)
     {
-        var slug = await _urlService.CreateShortUrl(request.OriginalUrl);
+        var slug = "";
+        if(string.IsNullOrEmpty(request.AliasUrl))
+            slug = await _urlService.CreateShortUrl(request.OriginalUrl);
+        else
+            slug = await _urlService.CreateShortUrl(request.OriginalUrl, request.AliasUrl);
         return Ok(new { slug });
     }
 }

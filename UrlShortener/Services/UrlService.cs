@@ -2,6 +2,7 @@ using System.Text;
 using UrlShortener.Repositories;
 using System.Security.Cryptography;
 using UrlShortener.Models;
+using UrlShortener.CustomExceptions;
 
 namespace UrlShortener.Services;
 
@@ -45,6 +46,20 @@ public class UrlService : IUrlService
 
         var result = await _urlRepository.UpdateShortUrl(url);
         return result.Slug;
+    }
+
+    public async Task<string> CreateShortUrl(string originalUrl, string aliasUrl)
+    {
+        string shortUrlCheck = await _urlRepository.GetShortUrl(originalUrl);
+        if (!string.IsNullOrEmpty(shortUrlCheck))
+        {
+            return shortUrlCheck;
+        }
+
+        if(await _urlRepository.ExistsShortUrl(aliasUrl)) throw new ConflictException("Alias url already exists");
+
+        ShortUrl url = await _urlRepository.CreateShortUrl(originalUrl, aliasUrl);
+        return url.Slug;
     }
 
     public async Task UpdateCountUrl(string slug)
