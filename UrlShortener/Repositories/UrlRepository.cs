@@ -13,29 +13,29 @@ public class UrlRepository : IUrlRepository
         _context = dbContext;
     }
 
-    public async Task<string> GetShortUrl(string originalUrl)
+    public async Task<List<ShortUrl>?> GetUrlsByOriginalUrl(string originalUrl)
     {
-        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.OriginalUrl == originalUrl);
-        if (url == null)
+        var url = await _context.ShortUrls.Where(x => x.OriginalUrl == originalUrl).ToListAsync();
+        if (url.Count <= 0 || url == null)
         {
-            return string.Empty;
+            return null;
         }
-        return url.Slug;
+        return url;
     }
 
-    public async Task<string> GetOriginalUrl(string slug)
+    public async Task<ShortUrl?> GetUrlBySlug(string slug)
     {
         var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Slug == slug);
         if (url == null)
         {
-            return string.Empty;
+            return null;
         }
-        return url.OriginalUrl;
+        return url;
     }
 
-    public async Task<ShortUrl?> GetUrl(string slug)
+    public async Task<ShortUrl?> GetUrlByOriginalUrlWithDateFilter(string originalUrl)
     {
-        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Slug == slug);
+        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.OriginalUrl == originalUrl && x.ExpiryDate > DateTime.Now);
         if (url == null)
         {
             return null;
@@ -78,6 +78,12 @@ public class UrlRepository : IUrlRepository
     {
         return await _context.ShortUrls.AnyAsync(x => x.OriginalUrl == originalUrl);
     }
+
+    public async Task<bool> ExistsOriginalUrlWithDateFilter(string originalUrl)
+    {
+        return await _context.ShortUrls.AnyAsync(x => x.OriginalUrl == originalUrl && x.ExpiryDate > DateTime.Now);
+    }
+
     public async Task<bool> ExistsShortUrl(string slug)
     {
         return await _context.ShortUrls.AnyAsync(x => x.Slug == slug);

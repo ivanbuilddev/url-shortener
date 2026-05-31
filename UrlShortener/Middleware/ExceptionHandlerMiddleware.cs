@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using UrlShortener.CustomExceptions;
 
 namespace UrlShortener.Middleware;
 
@@ -20,11 +19,6 @@ public class ExceptionHandlerMiddleware
         try
         {
             await _next(context);
-        }
-        catch (ConflictException ex)
-        {
-            _logger.LogError(ex, "ExceptionHandlerMiddleware");
-            await HandleExceptionAsync(context, ex, HttpStatusCode.Conflict);
         }
         catch (Exception ex)
         {

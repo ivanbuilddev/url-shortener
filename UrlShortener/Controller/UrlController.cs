@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using UrlShortener.DTOs;
@@ -20,24 +21,22 @@ public class UrlController : ControllerBase
     [HttpGet("~/{slug}")]
     public async Task<IActionResult> Get(string slug)
     {
-        string url = await _urlService.GetOriginalUrl(slug);
-        if (string.IsNullOrEmpty(url))
-        {
-            return NotFound();
-        }
+        GetUrlResponse url = await _urlService.GetOriginalUrl(slug);
+        if(url.HttpReturnCode == HttpStatusCode.NotFound) return NotFound(url.ErrorMessage);
+        if(url.HttpReturnCode == HttpStatusCode.Gone) return StatusCode((int)HttpStatusCode.Gone, url.ErrorMessage);
         await _urlService.UpdateCountUrl(slug);
-        return RedirectPermanent(url);
+        return RedirectPermanent(url.OriginalUrl);
     }
 
     [HttpPost("create")]
     [EnableRateLimiting("create")]
     public async Task<IActionResult> Create(CreateShortUrlRequest request)
     {
-        var slug = "";
+        var response = new GetUrlResponse();
         if(string.IsNullOrEmpty(request.AliasUrl))
-            slug = await _urlService.CreateShortUrl(request.OriginalUrl);
+            response = await _urlService.CreateShortUrl(request.OriginalUrl);
         else
-            slug = await _urlService.CreateShortUrl(request.OriginalUrl, request.AliasUrl);
-        return Ok(new { slug });
+            response = await _urlService.CreateShortUrl(request.OriginalUrl, request.AliasUrl);
+        return Ok(new { response.Slug });
     }
 }
