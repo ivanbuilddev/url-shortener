@@ -22,9 +22,8 @@ public class UrlService : IUrlService
     {
         var url = await _urlRepository.GetUrlBySlug(slug);
         if (url == null) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Url not found" };
-        if(url.ExpiryDate < DateTime.Now) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Gone, ErrorMessage = "Link expired" };
-        if(url.ClickLimit > 0 && url.Clicks >= url.ClickLimit) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.TooManyRequests, ErrorMessage = "Link limit reached" };
-        return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, OriginalUrl = url.OriginalUrl, Slug = url.Slug };
+        if(IsUrlExpired(url)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Gone, ErrorMessage = "Link expired" };
+        return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
     }
 
     public async Task<GetUrlResponse> CreateShortUrl(CreateShortUrlRequest request)
@@ -45,8 +44,8 @@ public class UrlService : IUrlService
             }
             url.Slug = shortCode;
 
-            var result = await _urlRepository.UpdateShortUrl(url);
-            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = result.Slug };
+            ShortUrl result = await _urlRepository.UpdateShortUrl(url);
+            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = result };
         }
         else
         {
@@ -54,7 +53,7 @@ public class UrlService : IUrlService
         
             ShortUrl url = await _urlRepository.CreateShortUrl(request);
 
-            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = url.Slug };
+            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
         }
     }
 
@@ -65,7 +64,7 @@ public class UrlService : IUrlService
         {
             foreach (ShortUrl possibleUrl in shortUrlListCheck)
             {
-                if(possibleUrl.ExpiryDate <= DateTime.Now) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = possibleUrl.Slug };
+                if(!IsUrlExpired(possibleUrl)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = possibleUrl };
             }
         }
 
@@ -104,5 +103,10 @@ public class UrlService : IUrlService
         }
         
         return result.ToString();
+    }
+
+    private bool IsUrlExpired(ShortUrl url)
+    {
+        return url.ExpiryDate < DateTime.Now || (url.ClickLimit > 0 && url.Clicks >= url.ClickLimit);
     }
 }

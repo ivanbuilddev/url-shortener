@@ -26,7 +26,7 @@ public class UrlController : ControllerBase
         if(url.HttpReturnCode == HttpStatusCode.Gone) return StatusCode((int)HttpStatusCode.Gone, url.ErrorMessage);
         if(url.HttpReturnCode == HttpStatusCode.TooManyRequests) return StatusCode((int)HttpStatusCode.TooManyRequests, url.ErrorMessage);
         await _urlService.UpdateCountUrl(slug);
-        return RedirectPermanent(url.OriginalUrl);
+        return RedirectPermanent(url.ShortUrl.OriginalUrl);
     }
 
     [HttpPost("create")]
@@ -34,6 +34,6 @@ public class UrlController : ControllerBase
     public async Task<IActionResult> Create(CreateShortUrlRequest request)
     {
         var response = await _urlService.CreateShortUrl(request);
-        return Ok(new { response.Slug });
+        return Ok(new { response.ShortUrl.Slug });
     }
 }
