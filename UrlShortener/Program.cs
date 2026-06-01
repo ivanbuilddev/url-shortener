@@ -28,6 +28,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IUrlRepository, UrlRepository>();
 builder.Services.AddScoped<IUrlService, UrlService>();
+builder.Services.AddHttpClient<IGeolocationService, GeolocationService>();
+
+builder.Services.AddScoped<IClickInfoRepository, ClickInfoRepository>();
+builder.Services.AddScoped<IClickInfoService, ClickInfoService>();
 
 var app = builder.Build();
 

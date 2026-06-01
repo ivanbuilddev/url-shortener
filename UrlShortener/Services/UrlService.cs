@@ -20,9 +20,19 @@ public class UrlService : IUrlService
 
     public async Task<GetUrlResponse> GetOriginalUrl(string slug)
     {
+        _logger.LogInformation("Get: initialize redirect using {slug}", slug);
         var url = await _urlRepository.GetUrlBySlug(slug);
-        if (url == null) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Url not found" };
-        if(IsUrlExpired(url)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Gone, ErrorMessage = "Link expired" };
+        if (url == null) 
+        {
+            _logger.LogInformation("Get: url not found");
+            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Url not found" };
+        }
+        if(IsUrlExpired(url)) 
+        {
+            _logger.LogInformation("Get: url expired");
+            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Gone, ErrorMessage = "Link expired" };
+        }
+        _logger.LogInformation("Get: url found");
         return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
     }
 
