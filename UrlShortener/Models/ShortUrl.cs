@@ -13,4 +13,6 @@ public class ShortUrl
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime ExpiryDate { get; set; } = DateTime.Now + TimeSpan.FromDays(1);
     public int Clicks { get; set; } = 0;
+    [Range(1, int.MaxValue, ErrorMessage = "Value must be greater than 0")]
+    public int ClickLimit { get; set; } = -1;
 }
