@@ -24,6 +24,7 @@ public class UrlController : ControllerBase
         GetUrlResponse url = await _urlService.GetOriginalUrl(slug);
         if(url.HttpReturnCode == HttpStatusCode.NotFound) return NotFound(url.ErrorMessage);
         if(url.HttpReturnCode == HttpStatusCode.Gone) return StatusCode((int)HttpStatusCode.Gone, url.ErrorMessage);
+        if(url.HttpReturnCode == HttpStatusCode.TooManyRequests) return StatusCode((int)HttpStatusCode.TooManyRequests, url.ErrorMessage);
         await _urlService.UpdateCountUrl(slug);
         return RedirectPermanent(url.OriginalUrl);
     }
@@ -32,11 +33,7 @@ public class UrlController : ControllerBase
     [EnableRateLimiting("create")]
     public async Task<IActionResult> Create(CreateShortUrlRequest request)
     {
-        var response = new GetUrlResponse();
-        if(string.IsNullOrEmpty(request.AliasUrl))
-            response = await _urlService.CreateShortUrl(request.OriginalUrl);
-        else
-            response = await _urlService.CreateShortUrl(request.OriginalUrl, request.AliasUrl);
+        var response = await _urlService.CreateShortUrl(request);
         return Ok(new { response.Slug });
     }
 }

@@ -23,37 +23,39 @@ public class UrlService : IUrlService
         var url = await _urlRepository.GetUrlBySlug(slug);
         if (url == null) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Url not found" };
         if(url.ExpiryDate < DateTime.Now) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Gone, ErrorMessage = "Link expired" };
+        if(url.ClickLimit > 0 && url.Clicks >= url.ClickLimit) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.TooManyRequests, ErrorMessage = "Link limit reached" };
         return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, OriginalUrl = url.OriginalUrl, Slug = url.Slug };
     }
 
-    public async Task<GetUrlResponse> CreateShortUrl(string originalUrl)
+    public async Task<GetUrlResponse> CreateShortUrl(CreateShortUrlRequest request)
     {
+        var originalUrl = request.OriginalUrl;
+        var aliasUrl = request.AliasUrl;
         var validation = await ValidateExistsUrl(originalUrl);
         if(validation.HttpReturnCode == HttpStatusCode.OK) return validation;
 
-        ShortUrl url = await _urlRepository.CreateShortUrl(originalUrl);
-        string shortCode = GenerateShortCode(url.Id, originalUrl);
-
-        while(await _urlRepository.ExistsShortUrl(shortCode))
+        if(string.IsNullOrEmpty(aliasUrl))
         {
-            shortCode = GenerateShortCode(url.Id, originalUrl);
+            ShortUrl url = await _urlRepository.CreateShortUrl(request);
+            string shortCode = GenerateShortCode(url.Id, originalUrl);
+
+            while(await _urlRepository.ExistsShortUrl(shortCode))
+            {
+                shortCode = GenerateShortCode(url.Id, originalUrl);
+            }
+            url.Slug = shortCode;
+
+            var result = await _urlRepository.UpdateShortUrl(url);
+            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = result.Slug };
         }
-        url.Slug = shortCode;
-
-        var result = await _urlRepository.UpdateShortUrl(url);
-        return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = result.Slug };
-    }
-
-    public async Task<GetUrlResponse> CreateShortUrl(string originalUrl, string aliasUrl)
-    {
-        var validation = await ValidateExistsUrl(originalUrl);
-        if(validation.HttpReturnCode == HttpStatusCode.OK) return validation;
-
-        if(await _urlRepository.ExistsShortUrl(aliasUrl)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Conflict, ErrorMessage = "Alias url already exists" };
+        else
+        {
+            if(await _urlRepository.ExistsShortUrl(aliasUrl)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Conflict, ErrorMessage = "Alias url already exists" };
         
-        ShortUrl url = await _urlRepository.CreateShortUrl(originalUrl, aliasUrl);
+            ShortUrl url = await _urlRepository.CreateShortUrl(request);
 
-        return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = url.Slug };
+            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, Slug = url.Slug };
+        }
     }
 
     private async Task<GetUrlResponse> ValidateExistsUrl(string originalUrl)

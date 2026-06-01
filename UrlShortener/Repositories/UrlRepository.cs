@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using UrlShortener.Data;
 using UrlShortener.Models;
+using UrlShortener.DTOs;
 
 namespace UrlShortener.Repositories;
 
@@ -33,34 +34,13 @@ public class UrlRepository : IUrlRepository
         return url;
     }
 
-    public async Task<ShortUrl?> GetUrlByOriginalUrlWithDateFilter(string originalUrl)
-    {
-        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.OriginalUrl == originalUrl && x.ExpiryDate > DateTime.Now);
-        if (url == null)
-        {
-            return null;
-        }
-        return url;
-    }
-
-    public async Task<ShortUrl> CreateShortUrl(string originalUrl)
+    public async Task<ShortUrl> CreateShortUrl(CreateShortUrlRequest request)
     {
         var shortUrl = new ShortUrl
         {
-            OriginalUrl = originalUrl,
-            Slug = ""
-        };
-        await _context.ShortUrls.AddAsync(shortUrl);
-        await _context.SaveChangesAsync();
-        return shortUrl;
-    }
-
-    public async Task<ShortUrl> CreateShortUrl(string originalUrl, string slug)
-    {
-        var shortUrl = new ShortUrl
-        {
-            OriginalUrl = originalUrl,
-            Slug = slug
+            OriginalUrl = request.OriginalUrl,
+            ClickLimit = request.ClickLimit,
+            Slug = request.AliasUrl
         };
         await _context.ShortUrls.AddAsync(shortUrl);
         await _context.SaveChangesAsync();
@@ -72,16 +52,6 @@ public class UrlRepository : IUrlRepository
         _context.ShortUrls.Update(shortUrl);
         await _context.SaveChangesAsync();
         return shortUrl;
-    }
-
-    public async Task<bool> ExistsOriginalUrl(string originalUrl)
-    {
-        return await _context.ShortUrls.AnyAsync(x => x.OriginalUrl == originalUrl);
-    }
-
-    public async Task<bool> ExistsOriginalUrlWithDateFilter(string originalUrl)
-    {
-        return await _context.ShortUrls.AnyAsync(x => x.OriginalUrl == originalUrl && x.ExpiryDate > DateTime.Now);
     }
 
     public async Task<bool> ExistsShortUrl(string slug)
