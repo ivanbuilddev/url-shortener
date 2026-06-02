@@ -15,4 +15,10 @@ public class ShortUrl
     public int Clicks { get; set; } = 0;
     [Range(1, int.MaxValue, ErrorMessage = "Value must be greater than 0")]
     public int ClickLimit { get; set; } = -1;
+    public bool IsEnabled { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
+    [Required]
+    public Guid UserId { get; set; }
+    public User? User { get; set; }
+    public List<UrlClickInfo>? ClicksInfo { get; set; }
 }
