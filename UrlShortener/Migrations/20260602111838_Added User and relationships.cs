@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UrlShortener.Migrations
 {
     /// <inheritdoc />
-    public partial class ImplementedUser : Migration
+    public partial class AddedUserandrelationships : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,16 +33,18 @@ namespace UrlShortener.Migrations
                 defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
 
             migrationBuilder.CreateTable(
-                name: "User",
+                name: "Users",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Username = table.Column<string>(type: "TEXT", nullable: false),
-                    Password = table.Column<string>(type: "TEXT", nullable: false)
+                    UserName = table.Column<string>(type: "TEXT", nullable: false),
+                    Email = table.Column<string>(type: "TEXT", nullable: false),
+                    PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_User", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
             migrationBuilder.CreateIndex(
@@ -51,10 +53,10 @@ namespace UrlShortener.Migrations
                 column: "UserId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_ShortUrls_User_UserId",
+                name: "FK_ShortUrls_Users_UserId",
                 table: "ShortUrls",
                 column: "UserId",
-                principalTable: "User",
+                principalTable: "Users",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
         }
@@ -63,11 +65,11 @@ namespace UrlShortener.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_ShortUrls_User_UserId",
+                name: "FK_ShortUrls_Users_UserId",
                 table: "ShortUrls");
 
             migrationBuilder.DropTable(
-                name: "User");
+                name: "Users");
 
             migrationBuilder.DropIndex(
                 name: "IX_ShortUrls_UserId",

@@ -6,6 +6,11 @@ using UrlShortener.Data;
 using UrlShortener.Middleware;
 using UrlShortener.Repositories;
 using UrlShortener.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using UrlShortener.Models;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -22,6 +27,25 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+var jwtConfig = builder.Configuration.GetSection("Jwt");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new()
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtConfig["Issuer"],
+            ValidAudience = jwtConfig["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig["Key"]!))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=url-shortener.db"));
@@ -32,6 +56,9 @@ builder.Services.AddHttpClient<IGeolocationService, GeolocationService>();
 
 builder.Services.AddScoped<IClickInfoRepository, ClickInfoRepository>();
 builder.Services.AddScoped<IClickInfoService, ClickInfoService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPasswordHasher<string>, PasswordHasher<string>>();
 
 var app = builder.Build();
 
@@ -47,7 +74,8 @@ app.UseMiddleware<LoggingRequestMiddleware>();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Lifetime.ApplicationStarted.Register(() =>

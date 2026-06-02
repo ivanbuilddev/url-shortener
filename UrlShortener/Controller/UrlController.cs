@@ -8,7 +8,6 @@ using UAParser;
 namespace UrlShortener.Controller;
 
 [ApiController]
-[EnableRateLimiting("create")]
 [Route("api/[controller]")]
 public class UrlController : ControllerBase
 {

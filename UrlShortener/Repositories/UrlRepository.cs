@@ -16,7 +16,7 @@ public class UrlRepository : IUrlRepository
 
     public async Task<List<ShortUrl>?> GetUrlsByOriginalUrl(string originalUrl)
     {
-        var url = await _context.ShortUrls.Where(x => x.OriginalUrl == originalUrl).ToListAsync();
+        var url = await _context.ShortUrls.Include(x => x.User).Include(x => x.ClicksInfo).Where(x => x.OriginalUrl == originalUrl).ToListAsync();
         if (url.Count <= 0 || url == null)
         {
             return null;
@@ -26,7 +26,7 @@ public class UrlRepository : IUrlRepository
 
     public async Task<ShortUrl?> GetUrlBySlug(string slug)
     {
-        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Slug == slug);
+        var url = await _context.ShortUrls.Include(x => x.User).Include(x => x.ClicksInfo).FirstOrDefaultAsync(x => x.Slug == slug);
         if (url == null)
         {
             return null;
