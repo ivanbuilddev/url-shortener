@@ -74,7 +74,7 @@ public class GetTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifeti
 
         var response = await _client.GetAsync("/correct");
 
-        Assert.Equal(HttpStatusCode.MovedPermanently, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(url + "/", response.Headers.Location?.ToString());
     }
 
@@ -103,7 +103,7 @@ public class GetTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifeti
 
         var response = await _client.GetAsync("/correct");
 
-        Assert.Equal(HttpStatusCode.MovedPermanently, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(url + "/", response.Headers.Location?.ToString());
     }
 
@@ -132,7 +132,7 @@ public class GetTests : IClassFixture<CustomWebApplicationFactory>, IAsyncLifeti
 
         var response = await _client.GetAsync("/correct");
 
-        Assert.Equal(HttpStatusCode.MovedPermanently, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(url2 + "/", response.Headers.Location?.ToString());
     }
 
