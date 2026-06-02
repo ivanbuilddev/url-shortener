@@ -34,10 +34,11 @@ public class UrlRepository : IUrlRepository
         return url;
     }
 
-    public async Task<ShortUrl> CreateShortUrl(CreateShortUrlRequest request)
+    public async Task<ShortUrl> CreateShortUrl(Guid userGuid, CreateShortUrlRequest request)
     {
         var shortUrl = new ShortUrl
         {
+            UserId = userGuid,
             OriginalUrl = request.OriginalUrl,
             ClickLimit = request.ClickLimit,
             Slug = request.AliasUrl

@@ -36,7 +36,7 @@ public class UrlService : IUrlService
         return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
     }
 
-    public async Task<GetUrlResponse> CreateShortUrl(CreateShortUrlRequest request)
+    public async Task<GetUrlResponse> CreateShortUrl(Guid userGuid, CreateShortUrlRequest request)
     {
         var originalUrl = request.OriginalUrl;
         var aliasUrl = request.AliasUrl;
@@ -45,7 +45,7 @@ public class UrlService : IUrlService
 
         if(string.IsNullOrEmpty(aliasUrl))
         {
-            ShortUrl url = await _urlRepository.CreateShortUrl(request);
+            ShortUrl url = await _urlRepository.CreateShortUrl(userGuid, request);
             string shortCode = GenerateShortCode(url.Id, originalUrl);
 
             while(await _urlRepository.ExistsShortUrl(shortCode))
@@ -61,7 +61,7 @@ public class UrlService : IUrlService
         {
             if(await _urlRepository.ExistsShortUrl(aliasUrl)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Conflict, ErrorMessage = "Alias url already exists" };
         
-            ShortUrl url = await _urlRepository.CreateShortUrl(request);
+            ShortUrl url = await _urlRepository.CreateShortUrl(userGuid, request);
 
             return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
         }

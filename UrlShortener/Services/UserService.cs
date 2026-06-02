@@ -28,7 +28,7 @@ public class UserService : IUserService
         User user = new User
         {
             Id = Guid.NewGuid(),
-            UserName = request.Email,
+            UserName = request.Username,
             Email = request.Email,
             PasswordHash = _passwordHasher.HashPassword("", request.Password)
         };

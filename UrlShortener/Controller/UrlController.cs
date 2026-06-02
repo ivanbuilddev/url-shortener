@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using UrlShortener.DTOs;
 using UrlShortener.Services;
 using UAParser;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace UrlShortener.Controller;
 
@@ -52,10 +54,14 @@ public class UrlController : ControllerBase
     }
 
     [HttpPost("create")]
+    [Authorize]
     [EnableRateLimiting("create")]
     public async Task<IActionResult> Create(CreateShortUrlRequest request)
     {
-        var response = await _urlService.CreateShortUrl(request);
+        string? userIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if(userIdentifier == null) return Unauthorized();
+        Guid userGuidString = Guid.Parse(userIdentifier);
+        var response = await _urlService.CreateShortUrl(userGuidString, request);
         return Ok(new { response.ShortUrl.Slug });
     }
 
