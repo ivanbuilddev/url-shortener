@@ -18,7 +18,7 @@ public class ShortUrl
     public bool IsEnabled { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
     [Required]
-    public Guid UserId { get; set; }
+    public string UserId { get; set; } = string.Empty;
     public User? User { get; set; }
     public List<UrlClickInfo>? ClicksInfo { get; set; }
 }

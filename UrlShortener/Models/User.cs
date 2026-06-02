@@ -1,9 +1,9 @@
+using Microsoft.AspNetCore.Identity;
+
 namespace UrlShortener.Models;
 
-public class User
+public class User: IdentityUser
 {
-    public Guid Id { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
     public List<ShortUrl>? ShortUrls { get; set; }
 }
