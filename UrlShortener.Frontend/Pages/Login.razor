@@ -1,0 +1,33 @@
+@page "/login"
+@using UrlShortener.Frontend.Services
+
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject IStorageService StorageService
+
+<form>
+    <div>
+        <label for="emailOrUsername">Introduce your username or email</label>
+        <input @bind="emailOrUsername" id="emailOrUsername" type="text" />
+    </div>
+    <div>
+        <label for="password">Introduce your password</label>
+        <input @bind="password" id="password" type="password" />
+    </div>
+    <button type="button" @onclick="handleLogin">Login</button>
+</form>
+<a href="/register">You don't have an account? Register</a>
+
+@code
+{
+    string emailOrUsername = string.Empty;
+    string password = string.Empty;
+
+    async Task handleLogin(){
+        string? token = await AuthService.Login(emailOrUsername, password);
+        if (!string.IsNullOrEmpty(token)){
+            await StorageService.SetItem("token", token);
+            Nav.NavigateTo("/Dashboard");
+        }
+    }
+}

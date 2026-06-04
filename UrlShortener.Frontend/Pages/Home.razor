@@ -1,0 +1,18 @@
+﻿@page "/"
+
+@inject NavigationManager Nav;
+@inject UrlShortener.Frontend.Services.IStorageService StorageService;
+
+@code{
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await StorageService.GetItem("token");
+        if (!string.IsNullOrEmpty(token)){
+            Nav.NavigateTo("/Dashboard");
+        }
+        else{
+            Nav.NavigateTo("/Login");
+        }
+    }
+}

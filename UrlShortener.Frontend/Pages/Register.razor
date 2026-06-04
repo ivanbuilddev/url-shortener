@@ -1,0 +1,38 @@
+@page "/register"
+@using UrlShortener.Frontend.Services
+
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject IStorageService StorageService
+
+<form>
+    <div>
+        <label for="username">Introduce your username</label>
+        <input @bind="username" id="username" type="text" />
+    </div>
+    <div>
+        <label for="email">Introduce your email</label>
+        <input @bind="email" id="email" type="text" />
+    </div>
+    <div>
+        <label for="password">Introduce your password</label>
+        <input @bind="password" id="password" type="password" />
+    </div>
+    <button type="button" @onclick="handleRegister">Register</button>
+</form>
+<a href="/login">You already have an account? Login</a>
+
+@code
+{
+    string username = string.Empty;
+    string email = string.Empty;
+    string password = string.Empty;
+
+    async Task handleRegister(){
+        string? token = await AuthService.Register(username, email, password);
+        if (!string.IsNullOrEmpty(token)){
+            await StorageService.SetItem("token", token);
+            Nav.NavigateTo("/Dashboard");
+        }
+    }
+}

@@ -9,7 +9,6 @@ using UrlShortener.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using UrlShortener.Models;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -44,6 +43,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("BlazorWebApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5157")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddAuthorization();
 
 builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
@@ -74,6 +83,7 @@ app.UseMiddleware<LoggingRequestMiddleware>();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
+app.UseCors("BlazorWebApp");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
