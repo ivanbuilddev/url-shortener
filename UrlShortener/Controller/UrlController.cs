@@ -24,6 +24,31 @@ public class UrlController : ControllerBase
         _clickInfoService = clickInfoService;
     }
 
+    [Authorize]
+    [HttpGet("get-all-urls")]
+    public async Task<IActionResult> Get()
+    {
+        string? userIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if(userIdentifier == null) return Unauthorized();
+        Guid userGuidString = Guid.Parse(userIdentifier);
+        var urls = await _urlService.GetAllUrls(userGuidString);
+        if(urls.HttpReturnCode == HttpStatusCode.NotFound) return StatusCode((int)HttpStatusCode.NotFound, urls.ErrorMessage);
+        return Ok(urls.Urls);
+    }
+
+    [Authorize]
+    [HttpGet("click-info/{id}")]
+    public async Task<IActionResult> GetClickInfo(int id)
+    {
+        string? userIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if(userIdentifier == null) return Unauthorized();
+        Guid userGuidString = Guid.Parse(userIdentifier);
+        if(await _urlService.CheckIfImOwner(userGuidString, id) == false) return Unauthorized();
+        var clickInfo = await _clickInfoService.GetClickInfoByUrl(id);
+        if(clickInfo.HttpReturnCode == HttpStatusCode.NotFound) return StatusCode((int)HttpStatusCode.NotFound, clickInfo.ErrorMessage);
+        return Ok(clickInfo.ClickInfo);
+    }
+
     [HttpGet("~/{slug}")]
     public async Task<IActionResult> Get(string slug)
     {
@@ -63,6 +88,18 @@ public class UrlController : ControllerBase
         Guid userGuidString = Guid.Parse(userIdentifier);
         var response = await _urlService.CreateShortUrl(userGuidString, request);
         return Ok(new { response.ShortUrl.Slug });
+    }
+
+    [HttpDelete("delete/{id}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(int id)
+    {
+        string? userIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if(userIdentifier == null) return Unauthorized();
+        Guid userGuidString = Guid.Parse(userIdentifier);
+        if(await _urlService.CheckIfImOwner(userGuidString, id) == false) return Unauthorized();
+        var response = await _urlService.Delete(id);
+        return Ok(response);
     }
 
     private string GetClientIpAddress()

@@ -1,3 +1,25 @@
 @page "/Dashboard"
 
+@using UrlShortener.Models
+@inject UrlShortener.Frontend.Services.IUrlService UrlService
+
 <h1>Dashboard</h1>
+
+@foreach (ShortUrl url in urls)
+{
+    <div>
+        <p>My link</p>
+        <p>@url.Id</p>
+        <p>@url.OriginalUrl</p>
+        <p>@url.Slug</p>
+    </div>
+}
+
+@code {
+
+    List<ShortUrl> urls = new List<ShortUrl>();
+    protected override async Task OnInitializedAsync()
+    {
+        urls = await UrlService.GetAllUrls();
+    }
+}

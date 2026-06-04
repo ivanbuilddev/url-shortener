@@ -18,6 +18,19 @@ public class UrlService : IUrlService
         _logger = logger;
     }
 
+    public async Task<GetAllUrlsResponse> GetAllUrls(Guid userGuid)
+    {
+        _logger.LogInformation("Get: initialize get all urls");
+        var urls = await _urlRepository.GetUrlsByUserId(userGuid);
+        if (urls == null)
+        {
+            _logger.LogInformation("Get: urls not found");
+            return new GetAllUrlsResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Urls not found" };
+        }
+        _logger.LogInformation("Get: urls found");
+        return new GetAllUrlsResponse { HttpReturnCode = HttpStatusCode.OK, Urls = urls };
+    }
+
     public async Task<GetUrlResponse> GetOriginalUrl(string slug)
     {
         _logger.LogInformation("Get: initialize redirect using {slug}", slug);
@@ -88,6 +101,16 @@ public class UrlService : IUrlService
         url.Clicks++;
         await _urlRepository.UpdateShortUrl(url);
         return;
+    }
+
+    public async Task<bool> Delete(int urlId)
+    {
+        return await _urlRepository.DeleteShortUrl(urlId);
+    }
+
+    public async Task<bool> CheckIfImOwner(Guid userGuid, int urlId)
+    {
+        return await _urlRepository.CheckIfImOwner(userGuid, urlId);
     }
 
     private string GenerateShortCode(int id, string originalUrl)

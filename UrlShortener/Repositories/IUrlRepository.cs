@@ -5,9 +5,12 @@ namespace UrlShortener.Repositories;
 
 public interface IUrlRepository
 {
+    public Task<List<ShortUrl>?> GetUrlsByUserId(Guid userId);
     public Task<List<ShortUrl>?> GetUrlsByOriginalUrl(string originalUrl);
     public Task<ShortUrl?> GetUrlBySlug(string slug);
     public Task<ShortUrl> CreateShortUrl(Guid userGuid,CreateShortUrlRequest request);
     public Task<ShortUrl> UpdateShortUrl(ShortUrl shortUrl);
+    public Task<bool> DeleteShortUrl(int urlId);
     public Task<bool> ExistsShortUrl(string slug);
+    public Task<bool> CheckIfImOwner(Guid userGuid, int urlId);
 }

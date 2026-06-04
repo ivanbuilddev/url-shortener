@@ -14,6 +14,11 @@ public class UrlRepository : IUrlRepository
         _context = dbContext;
     }
 
+    public async Task<List<ShortUrl>?> GetUrlsByUserId(Guid userId)
+    {
+        return await _context.ShortUrls.Include(x => x.User).Include(x => x.ClicksInfo).Where(x => x.UserId == userId).ToListAsync();
+    }
+
     public async Task<List<ShortUrl>?> GetUrlsByOriginalUrl(string originalUrl)
     {
         var url = await _context.ShortUrls.Include(x => x.User).Include(x => x.ClicksInfo).Where(x => x.OriginalUrl == originalUrl).ToListAsync();
@@ -55,9 +60,24 @@ public class UrlRepository : IUrlRepository
         return shortUrl;
     }
 
+    public async Task<bool> DeleteShortUrl(int urlId)
+    {
+        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Id == urlId);
+        if (url == null) return false;
+        _context.ShortUrls.Remove(url);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<bool> ExistsShortUrl(string slug)
     {
         return await _context.ShortUrls.AnyAsync(x => x.Slug == slug);
     }
 
+    public async Task<bool> CheckIfImOwner(Guid userGuid, int urlId)
+    {
+        var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Id == urlId && x.UserId == userGuid);
+        if (url == null) return false;
+        return true;
+    }
 }
