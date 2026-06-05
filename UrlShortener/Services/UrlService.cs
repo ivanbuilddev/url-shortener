@@ -95,6 +95,7 @@ public class UrlService : IUrlService
             url.Slug = shortCode;
 
             ShortUrl result = await _urlRepository.UpdateShortUrl(url);
+            await _cache.RemoveAsync($"urlsbyuser:{userGuid}");
             return Result<ShortUrl>.Success(result);
         }
         else
@@ -102,7 +103,7 @@ public class UrlService : IUrlService
             if(await _urlRepository.ExistsShortUrl(aliasUrl)) return Result<ShortUrl>.Conflict();
         
             ShortUrl url = await _urlRepository.CreateShortUrl(userGuid, request);
-
+            await _cache.RemoveAsync($"urlsbyuser:{userGuid}");
             return Result<ShortUrl>.Success(url);
         }
     }
@@ -127,6 +128,8 @@ public class UrlService : IUrlService
         if(url == null) return;
         url.Clicks++;
         await _urlRepository.UpdateShortUrl(url);
+        await _cache.RemoveAsync($"originalurl:{slug}");
+        await _cache.RemoveAsync($"urlsbyuser:{url.UserId}");
         await _hubContext.Clients.All.SendAsync("UpdateUrlCounter", new DashboardSocket { UrlId = url.Id, NewCount = url.Clicks });
         return;
     }
