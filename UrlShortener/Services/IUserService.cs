@@ -4,6 +4,6 @@ namespace UrlShortener.Services;
 
 public interface IUserService
 {
-    Task<UserResponse> Register(RegisterUserRequest request);
-    Task<UserResponse> Login(LoginUserRequest request);
+    Task<Result<string>> Register(RegisterUserRequest request);
+    Task<Result<string>> Login(LoginUserRequest request);
 }

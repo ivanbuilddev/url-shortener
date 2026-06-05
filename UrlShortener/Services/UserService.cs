@@ -23,7 +23,7 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
-    public async Task<UserResponse> Register(RegisterUserRequest request)
+    public async Task<Result<string>> Register(RegisterUserRequest request)
     {
         User user = new User
         {
@@ -35,18 +35,18 @@ public class UserService : IUserService
 
         await _userRepository.CreateUser(user);
         var token = GenerateToken(user.Id.ToString(), user.Email, user.UserName);
-        return new UserResponse { HttpReturnCode = HttpStatusCode.OK, Token = token };
+        return Result<string>.Success(token);
     }
 
-    public async Task<UserResponse> Login(LoginUserRequest request)
+    public async Task<Result<string>> Login(LoginUserRequest request)
     {
         User? user = await _userRepository.GetUserByEmailOrUsername(request.EmailOrUsername);
-        if(user == null) return new UserResponse { HttpReturnCode = HttpStatusCode.Unauthorized, ErrorMessage = "Invalid email or password" };
+        if(user == null) return Result<string>.Unauthorized();
         var verifyResult = _passwordHasher.VerifyHashedPassword("", user.PasswordHash, request.Password);
-        if(verifyResult == PasswordVerificationResult.Failed) return new UserResponse { HttpReturnCode = HttpStatusCode.Unauthorized, ErrorMessage = "Invalid email or password" };
+        if(verifyResult == PasswordVerificationResult.Failed) return Result<string>.Unauthorized();
         
         var token = GenerateToken(user.Id.ToString(), user.Email, user.UserName);
-        return new UserResponse { HttpReturnCode = HttpStatusCode.OK, Token = token };
+        return Result<string>.Success(token);
     }
 
     private string GenerateToken(string userId, string email, string username)

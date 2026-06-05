@@ -19,14 +19,14 @@ public class UserController : ControllerBase
     public async Task<IActionResult> Register(RegisterUserRequest request)
     {
         var response = await _userService.Register(request);
-        return Ok(response.Token);
+        return Ok(response.Value);
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginUserRequest request)
     {
         var response = await _userService.Login(request);
-        if(response.HttpReturnCode == System.Net.HttpStatusCode.Unauthorized) return Unauthorized(response.ErrorMessage);
-        return Ok(response.Token);
+        if(response.Status == System.Net.HttpStatusCode.Unauthorized) return Unauthorized(response.ErrorMessage);
+        return Ok(response.Value);
     }
 }

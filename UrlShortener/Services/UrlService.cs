@@ -18,43 +18,43 @@ public class UrlService : IUrlService
         _logger = logger;
     }
 
-    public async Task<GetAllUrlsResponse> GetAllUrls(Guid userGuid)
+    public async Task<Result<List<ShortUrl>>> GetAllUrls(Guid userGuid)
     {
         _logger.LogInformation("Get: initialize get all urls");
         var urls = await _urlRepository.GetUrlsByUserId(userGuid);
         if (urls == null)
         {
             _logger.LogInformation("Get: urls not found");
-            return new GetAllUrlsResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Urls not found" };
+            return Result<List<ShortUrl>>.NotFound();
         }
         _logger.LogInformation("Get: urls found");
-        return new GetAllUrlsResponse { HttpReturnCode = HttpStatusCode.OK, Urls = urls };
+        return Result<List<ShortUrl>>.Success(urls);
     }
 
-    public async Task<GetUrlResponse> GetOriginalUrl(string slug)
+    public async Task<Result<ShortUrl>> GetOriginalUrl(string slug)
     {
         _logger.LogInformation("Get: initialize redirect using {slug}", slug);
         var url = await _urlRepository.GetUrlBySlug(slug);
         if (url == null) 
         {
             _logger.LogInformation("Get: url not found");
-            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Url not found" };
+            return Result<ShortUrl>.NotFound();
         }
         if(IsUrlExpired(url)) 
         {
             _logger.LogInformation("Get: url expired");
-            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Gone, ErrorMessage = "Link expired" };
+            return Result<ShortUrl>.Gone();
         }
         _logger.LogInformation("Get: url found");
-        return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
+        return Result<ShortUrl>.Success(url);
     }
 
-    public async Task<GetUrlResponse> CreateShortUrl(Guid userGuid, CreateShortUrlRequest request)
+    public async Task<Result<ShortUrl>> CreateShortUrl(Guid userGuid, CreateShortUrlRequest request)
     {
         var originalUrl = request.OriginalUrl;
         var aliasUrl = request.AliasUrl;
         var validation = await ValidateExistsUrl(originalUrl);
-        if(validation.HttpReturnCode == HttpStatusCode.OK) return validation;
+        if(validation.Status == HttpStatusCode.OK) return validation;
 
         if(string.IsNullOrEmpty(aliasUrl))
         {
@@ -68,30 +68,30 @@ public class UrlService : IUrlService
             url.Slug = shortCode;
 
             ShortUrl result = await _urlRepository.UpdateShortUrl(url);
-            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = result };
+            return Result<ShortUrl>.Success(result);
         }
         else
         {
-            if(await _urlRepository.ExistsShortUrl(aliasUrl)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.Conflict, ErrorMessage = "Alias url already exists" };
+            if(await _urlRepository.ExistsShortUrl(aliasUrl)) return Result<ShortUrl>.Conflict();
         
             ShortUrl url = await _urlRepository.CreateShortUrl(userGuid, request);
 
-            return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = url };
+            return Result<ShortUrl>.Success(url);
         }
     }
 
-    private async Task<GetUrlResponse> ValidateExistsUrl(string originalUrl)
+    private async Task<Result<ShortUrl>> ValidateExistsUrl(string originalUrl)
     {
         List<ShortUrl>? shortUrlListCheck = await _urlRepository.GetUrlsByOriginalUrl(originalUrl);
         if (shortUrlListCheck != null)
         {
             foreach (ShortUrl possibleUrl in shortUrlListCheck)
             {
-                if(!IsUrlExpired(possibleUrl)) return new GetUrlResponse { HttpReturnCode = HttpStatusCode.OK, ShortUrl = possibleUrl };
+                if(!IsUrlExpired(possibleUrl)) return Result<ShortUrl>.Success(possibleUrl);
             }
         }
 
-        return new GetUrlResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Url not found" };
+        return Result<ShortUrl>.NotFound();
     }
 
     public async Task UpdateCountUrl(string slug)

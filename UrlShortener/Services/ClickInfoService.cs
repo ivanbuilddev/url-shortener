@@ -1,6 +1,7 @@
 using UrlShortener.Repositories;
 using UrlShortener.DTOs;
 using System.Net;
+using UrlShortener.Models;
 
 namespace UrlShortener.Services;
 
@@ -13,14 +14,14 @@ public class ClickInfoService : IClickInfoService
         _clickInfoRepository = clickInfoRepository;
     }
 
-    public async Task<UrlClickInfoResponse> GetClickInfoByUrl(int urlId)
+    public async Task<Result<List<UrlClickInfo>>> GetClickInfoByUrl(int urlId)
     {
         var clickInfo = await _clickInfoRepository.GetClickInfoByUrl(urlId);
         if (clickInfo == null)
         {
-            return new UrlClickInfoResponse { HttpReturnCode = HttpStatusCode.NotFound, ErrorMessage = "Click info not found" };
+            return Result<List<UrlClickInfo>>.NotFound();
         }
-        return new UrlClickInfoResponse { HttpReturnCode = HttpStatusCode.OK, ClickInfo = clickInfo };
+        return Result<List<UrlClickInfo>>.Success(clickInfo);
     }
 
     public async Task CreateClickInfo(CreateClickInfoRequest request)

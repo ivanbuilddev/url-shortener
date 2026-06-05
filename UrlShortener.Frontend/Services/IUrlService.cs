@@ -5,9 +5,9 @@ namespace UrlShortener.Frontend.Services;
 
 public interface IUrlService
 {
-    public Task<List<ShortUrl>?> GetAllUrls();
-    public Task<List<UrlClickInfo>?> GetUrlStats(int urlId);
-    public Task<bool> Create(CreateShortUrlRequest request);
-    public Task<bool> Delete(int urlId);
+    public Task<Result<List<ShortUrl>>> GetAllUrls();
+    public Task<Result<List<UrlClickInfo>>> GetUrlStats(int urlId);
+    public Task<Result<bool>> Create(CreateShortUrlRequest request);
+    public Task<Result<bool>> Delete(int urlId);
 
 }

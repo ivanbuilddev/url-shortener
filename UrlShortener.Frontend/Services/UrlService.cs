@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using UrlShortener.DTOs;
 using UrlShortener.Models;
+using System.Net;
 
 namespace UrlShortener.Frontend.Services;
 
@@ -17,52 +17,60 @@ public class UrlService : IUrlService
         _storageService = storageService;
     }
 
-    public async Task<List<ShortUrl>?> GetAllUrls()
+    public async Task<Result<List<ShortUrl>>> GetAllUrls()
     {
         var token = await _storageService.GetItem("token");
-        if(string.IsNullOrEmpty(token)) return null;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.GetAsync("api/url/get-all-urls");
         var responseData = await response.Content.ReadFromJsonAsync<List<ShortUrl>>();
         
-        if (!response.IsSuccessStatusCode) return null;
+        if(response.StatusCode == HttpStatusCode.Unauthorized) return Result<List<ShortUrl>>.Unauthorized();
+        if(response.StatusCode == HttpStatusCode.Forbidden) return Result<List<ShortUrl>>.Forbidden();
+        if (!response.IsSuccessStatusCode) return Result<List<ShortUrl>>.Failure();
 
-        return responseData;
+        return Result<List<ShortUrl>>.Success(responseData);
     }
 
-    public async Task<List<UrlClickInfo>?> GetUrlStats(int urlId)
+    public async Task<Result<List<UrlClickInfo>>> GetUrlStats(int urlId)
     {
         var token = await _storageService.GetItem("token");
-        if(string.IsNullOrEmpty(token)) return null;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.GetAsync($"api/url/click-info/{urlId}");
-        var responseData = await response.Content.ReadAsStringAsync();
+        var responseData = await response.Content.ReadFromJsonAsync<List<UrlClickInfo>>();
         
-        if (!response.IsSuccessStatusCode) return null;
+        if(response.StatusCode == HttpStatusCode.Unauthorized) return Result<List<UrlClickInfo>>.Unauthorized();
+        if(response.StatusCode == HttpStatusCode.Forbidden) return Result<List<UrlClickInfo>>.Forbidden();
+        if (!response.IsSuccessStatusCode) return Result<List<UrlClickInfo>>.Failure();
 
-        return JsonSerializer.Deserialize<List<UrlClickInfo>>(responseData);
+        return Result<List<UrlClickInfo>>.Success(responseData);
     }
 
-    public async Task<bool> Create(CreateShortUrlRequest request)
+    public async Task<Result<bool>> Create(CreateShortUrlRequest request)
     {
         var token = await _storageService.GetItem("token");
-        if(string.IsNullOrEmpty(token)) return false;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.PostAsJsonAsync("api/url/create", request);
         
-        return response.IsSuccessStatusCode;
+        if(response.StatusCode == HttpStatusCode.Unauthorized) return Result<bool>.Unauthorized();
+        if(response.StatusCode == HttpStatusCode.Forbidden) return Result<bool>.Forbidden();
+        if (!response.IsSuccessStatusCode) return Result<bool>.Failure();
+
+        return Result<bool>.Success(true);
     }
-    public async Task<bool> Delete(int urlId)
+    public async Task<Result<bool>> Delete(int urlId)
     {
         var token = await _storageService.GetItem("token");
-        if(string.IsNullOrEmpty(token)) return false;
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _httpClient.DeleteAsync($"api/url/delete/{urlId}");
         
-        return response.IsSuccessStatusCode;
+        if(response.StatusCode == HttpStatusCode.Unauthorized) return Result<bool>.Unauthorized();
+        if(response.StatusCode == HttpStatusCode.Forbidden) return Result<bool>.Forbidden();
+        if (!response.IsSuccessStatusCode) return Result<bool>.Failure();
+
+        return Result<bool>.Success(true);
     }
 }
