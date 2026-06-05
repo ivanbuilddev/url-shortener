@@ -42,5 +42,6 @@ public class ClickInfoService : IClickInfoService
     public async Task CreateClickInfo(CreateClickInfoRequest request)
     {
         await _clickInfoRepository.CreateClickInfo(request);
+        await _cache.RemoveAsync($"urlstats:{request.ShortUrlId}");
     }
 }
