@@ -29,6 +29,12 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+   options.Configuration = "localhost:6379";
+   options.InstanceName = "urlshortener:";
+});
+
 var jwtConfig = builder.Configuration.GetSection("Jwt");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

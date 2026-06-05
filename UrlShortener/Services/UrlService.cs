@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using UrlShortener.Models;
 using UrlShortener.DTOs;
 using System.Net;
+using Microsoft.Extensions.Caching.Distributed;
+using UrlShortener.Extensions;
 
 namespace UrlShortener.Services;
 
@@ -11,16 +13,26 @@ public class UrlService : IUrlService
 {
     private readonly IUrlRepository _urlRepository;
     private readonly ILogger<UrlService> _logger;
+    private readonly IDistributedCache _cache;
 
-    public UrlService(IUrlRepository urlRepository, ILogger<UrlService> logger)
+    public UrlService(IUrlRepository urlRepository, ILogger<UrlService> logger, IDistributedCache cache)
     {
         _urlRepository = urlRepository;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task<Result<List<ShortUrl>>> GetAllUrls(Guid userGuid)
     {
         _logger.LogInformation("Get: initialize get all urls");
+
+        var cached = await _cache.GetObjectAsync<List<ShortUrl>>($"urlsbyuser:{userGuid}");
+        if(cached != null) 
+        {
+            _logger.LogInformation("Get: hitting the cache");
+            return Result<List<ShortUrl>>.Success(cached);
+        }
+
         var urls = await _urlRepository.GetUrlsByUserId(userGuid);
         if (urls == null)
         {
@@ -28,12 +40,20 @@ public class UrlService : IUrlService
             return Result<List<ShortUrl>>.NotFound();
         }
         _logger.LogInformation("Get: urls found");
+        await _cache.SetObjectAsync($"urlsbyuser:{userGuid}", urls);
         return Result<List<ShortUrl>>.Success(urls);
     }
 
     public async Task<Result<ShortUrl>> GetOriginalUrl(string slug)
     {
         _logger.LogInformation("Get: initialize redirect using {slug}", slug);
+        var cached = await _cache.GetObjectAsync<ShortUrl>($"originalurl:{slug}");
+        if(cached != null) 
+        {
+            _logger.LogInformation("Get: hitting the cache");
+            return Result<ShortUrl>.Success(cached);
+        }
+
         var url = await _urlRepository.GetUrlBySlug(slug);
         if (url == null) 
         {
@@ -46,6 +66,8 @@ public class UrlService : IUrlService
             return Result<ShortUrl>.Gone();
         }
         _logger.LogInformation("Get: url found");
+
+        await _cache.SetObjectAsync($"originalurl:{slug}", url);
         return Result<ShortUrl>.Success(url);
     }
 
