@@ -1,0 +1,48 @@
+@page "/dashboard/{Id:int}"
+@using UrlShortener.Models
+
+@inject UrlShortener.Frontend.Services.IUrlService UrlService
+
+<table>
+    <tr>
+        <th>Browser</th>
+        <th>BrowserVersion</th>
+        <th>ClickedAt</th>
+        <th>CountryCode</th>
+        <th>DeviceType</th>
+        <th>IpAddress</th>
+        <th>OperatingSystem</th>
+        <th>Referrer</th>
+        <th>UserAgent</th>
+    </tr>
+    @foreach (UrlClickInfo clickInfo in urlClickInfo){
+        <tr>
+            <th>@clickInfo.Browser</th>
+            <th>@clickInfo.BrowserVersion</th>
+            <th>@clickInfo.ClickedAt</th>
+            <th>@clickInfo.CountryCode</th>
+            <th>@clickInfo.DeviceType</th>
+            <th>@clickInfo.IpAddress</th>
+            <th>@clickInfo.OperatingSystem</th>
+            <th>@clickInfo.Referrer</th>
+            <th>@clickInfo.UserAgent</th>
+        </tr>
+    }
+</table>
+@code {
+
+    [Parameter]
+    public int Id {get; set;}
+
+    List<UrlClickInfo> urlClickInfo = new List<UrlClickInfo>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        var result = await UrlService.GetUrlStats(Id);
+        if(result.IsAnyError()){}
+        else {
+            urlClickInfo = result.Value!;
+        }
+    }
+}

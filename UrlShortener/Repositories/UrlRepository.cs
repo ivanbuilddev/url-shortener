@@ -16,7 +16,7 @@ public class UrlRepository : IUrlRepository
 
     public async Task<List<ShortUrl>?> GetUrlsByUserId(Guid userId)
     {
-        return await _context.ShortUrls.Include(x => x.User).Include(x => x.ClicksInfo).Where(x => x.UserId == userId).ToListAsync();
+        return await _context.ShortUrls.Include(x => x.User).Include(x => x.ClicksInfo).Where(x => x.UserId == userId && x.IsDeleted == false).ToListAsync();
     }
 
     public async Task<List<ShortUrl>?> GetUrlsByOriginalUrl(string originalUrl)
@@ -64,7 +64,7 @@ public class UrlRepository : IUrlRepository
     {
         var url = await _context.ShortUrls.FirstOrDefaultAsync(x => x.Id == urlId);
         if (url == null) return false;
-        _context.ShortUrls.Remove(url);
+        url.IsDeleted = true;
         await _context.SaveChangesAsync();
         return true;
     }

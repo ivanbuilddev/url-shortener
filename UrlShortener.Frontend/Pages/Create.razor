@@ -1,0 +1,40 @@
+@page "/create"
+@using UrlShortener.DTOs;
+@inject UrlShortener.Frontend.Services.IUrlService UrlService
+@inject NavigationManager Nav
+
+<form>
+    <label for="originalUrl">Original Url</label>
+    <input type="text" @bind="originalUrl" id="originalUrl" />
+
+    <label for="alis">Alias</label>
+    <input type="text" @bind="aliasUrl" id="alias" />
+    <p>If you do not want any custom alias, leave it empty</p>
+
+    <label for="clickLimit">Click Limit</label>
+    <input type="number" @bind="clickLimit" id="clickLimit" />
+    <p>If you do not want any limit, just leave it as 0</p>
+
+    <button type="button" @onclick="HandleCreate">Create</button>
+</form>
+
+
+@code{
+    string originalUrl = string.Empty;
+    string aliasUrl = string.Empty;
+    int clickLimit = 0;
+
+    public async Task HandleCreate(){
+        if(clickLimit <= 0) clickLimit = -1;
+        CreateShortUrlRequest request = new CreateShortUrlRequest{
+            OriginalUrl = originalUrl,
+            AliasUrl = aliasUrl,
+            ClickLimit = clickLimit
+        };
+        var result = await UrlService.Create(request);
+        if(result.IsAnyError()) {}
+        else{
+            Nav.NavigateTo("/dashboard");
+        }
+    }
+}

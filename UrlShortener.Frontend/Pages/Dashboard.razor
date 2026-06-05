@@ -3,6 +3,7 @@
 @using UrlShortener.Models
 @inject UrlShortener.Frontend.Services.IUrlService UrlService
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <h1>Dashboard</h1>
 @if(anyErrors){
@@ -25,15 +26,35 @@ else{
             <th>@url.Slug</th>
             <th>@url.Clicks</th>
             <th><button @onclick="() => HandleCopy(url.Slug)">Copy</button></th>
+            <th><button @onclick="() => HandleDelete(url.Id)">Delete</button></th>
+            <th><button @onclick="() => HandleStats(url.Id)">Get stats</button></th>
         </tr>
     }
     </table>
+    <a href="/create"><button>Create new Url</button></a>
 }
 @code {
     bool anyErrors = false;
     List<ShortUrl> urls = new List<ShortUrl>();
     protected override async Task OnInitializedAsync()
     {
+        await UpdateItems();
+    }
+
+    public async Task HandleCopy(string slug){
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", "localhost:5112/" + slug);
+    }
+
+    public async Task HandleDelete(int id){
+        var result = await UrlService.Delete(id);
+        await UpdateItems();
+    }
+
+    public async Task HandleStats(int id){
+        Nav.NavigateTo("/dashboard/" + id);
+    }
+
+    private async Task UpdateItems(){
         var result = await UrlService.GetAllUrls();
         if(result.IsAnyError()){
             anyErrors = true;
@@ -41,9 +62,5 @@ else{
         else{
             urls = result.Value!;
         }
-    }
-
-    public async Task HandleCopy(string slug){
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", "localhost:5112/" + slug);
     }
 }
