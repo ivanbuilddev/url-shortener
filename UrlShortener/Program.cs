@@ -11,8 +11,14 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using System.Text.Json.Serialization;
+using UrlShortener.Sockets;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
+
+builder.Services.AddSignalR();
 builder.Services.AddControllers().AddJsonOptions(
     options => options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles
 );
@@ -29,12 +35,23 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-   options.Configuration = "localhost:6379";
-   options.InstanceName = "urlshortener:";
-});
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+var redisAvailable = await IsRedisAvailableAsync(redisConnectionString);
 
+if(redisAvailable)
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+    options.Configuration = "localhost:6379";
+    options.InstanceName = "urlshortener:";
+    });
+    Console.WriteLine("Redis connected.");
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+    Console.WriteLine("Redis unavailable — using in-memory cache.");
+}
 var jwtConfig = builder.Configuration.GetSection("Jwt");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -64,7 +81,6 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAuthorization();
 
-builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=url-shortener.db"));
 
@@ -80,7 +96,6 @@ builder.Services.AddScoped<IPasswordHasher<string>, PasswordHasher<string>>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -90,6 +105,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<LoggingRequestMiddleware>();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
+
+app.MapHub<DashboardHub>("/hubs/dashboard");
+app.MapHub<ClickInfoHub>("/hubs/clickinfo");
 
 app.UseHttpsRedirection();
 app.UseCors("BlazorWebApp");
@@ -107,3 +125,15 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 app.Run();
+
+
+static async Task<bool> IsRedisAvailableAsync(string? connectionString)
+{
+    if (string.IsNullOrEmpty(connectionString)) return false;
+    try
+    {
+        var redis = await ConnectionMultiplexer.ConnectAsync(connectionString);
+        return redis.IsConnected;
+    }
+    catch { return false; }
+}

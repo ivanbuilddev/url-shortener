@@ -6,20 +6,24 @@ using UrlShortener.DTOs;
 using System.Net;
 using Microsoft.Extensions.Caching.Distributed;
 using UrlShortener.Extensions;
+using UrlShortener.Sockets;
+using Microsoft.AspNetCore.SignalR;
 
 namespace UrlShortener.Services;
 
 public class UrlService : IUrlService
 {
+    private readonly IHubContext<DashboardHub> _hubContext;
     private readonly IUrlRepository _urlRepository;
     private readonly ILogger<UrlService> _logger;
     private readonly IDistributedCache _cache;
 
-    public UrlService(IUrlRepository urlRepository, ILogger<UrlService> logger, IDistributedCache cache)
+    public UrlService(IUrlRepository urlRepository, ILogger<UrlService> logger, IDistributedCache cache, IHubContext<DashboardHub> hubContext)
     {
         _urlRepository = urlRepository;
         _logger = logger;
         _cache = cache;
+        _hubContext = hubContext;
     }
 
     public async Task<Result<List<ShortUrl>>> GetAllUrls(Guid userGuid)
@@ -68,6 +72,7 @@ public class UrlService : IUrlService
         _logger.LogInformation("Get: url found");
 
         await _cache.SetObjectAsync($"originalurl:{slug}", url);
+
         return Result<ShortUrl>.Success(url);
     }
 
@@ -122,6 +127,7 @@ public class UrlService : IUrlService
         if(url == null) return;
         url.Clicks++;
         await _urlRepository.UpdateShortUrl(url);
+        await _hubContext.Clients.All.SendAsync("UpdateUrlCounter", new DashboardSocket { UrlId = url.Id, NewCount = url.Clicks });
         return;
     }
 

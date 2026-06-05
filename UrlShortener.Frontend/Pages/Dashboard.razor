@@ -1,9 +1,12 @@
 @page "/Dashboard"
 
+@using Microsoft.AspNetCore.SignalR.Client
 @using UrlShortener.Models
+@using UrlShortener.DTOs
 @inject UrlShortener.Frontend.Services.IUrlService UrlService
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@implements IAsyncDisposable
 
 <h1>Dashboard</h1>
 @if(anyErrors){
@@ -34,11 +37,25 @@ else{
     <a href="/create"><button>Create new Url</button></a>
 }
 @code {
+    private HubConnection? _hub;
     bool anyErrors = false;
     List<ShortUrl> urls = new List<ShortUrl>();
     protected override async Task OnInitializedAsync()
     {
         await UpdateItems();
+        _hub = new HubConnectionBuilder().WithUrl("http://localhost:5112/hubs/dashboard").WithAutomaticReconnect().Build();
+        _hub.On<DashboardSocket>("UpdateUrlCounter", (DashboardSocket value) =>
+        {
+            urls.First(x => x.Id == value.UrlId).Clicks = value.NewCount;
+            InvokeAsync(StateHasChanged);
+        });
+        await _hub.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is not null)
+            await _hub.DisposeAsync();
     }
 
     public async Task HandleCopy(string slug){
