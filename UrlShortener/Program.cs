@@ -42,7 +42,7 @@ if(redisAvailable)
 {
     builder.Services.AddStackExchangeRedisCache(options =>
     {
-    options.Configuration = "localhost:6379";
+    options.Configuration = redisConnectionString;
     options.InstanceName = "urlshortener:";
     });
     Console.WriteLine("Redis connected.");
@@ -73,16 +73,20 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("BlazorWebApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5157")
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+                             ?? new[] { "http://localhost:5157" };
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
 builder.Services.AddAuthorization();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=url-shortener.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=url-shortener.db"));
+    options.UseSqlite(connectionString));
 
 builder.Services.AddScoped<IUrlRepository, UrlRepository>();
 builder.Services.AddScoped<IUrlService, UrlService>();
@@ -123,6 +127,12 @@ app.Lifetime.ApplicationStarted.Register(() =>
         app.Logger.LogInformation("Scalar disponible en: {Address}/scalar/v1", address);
     }
 });
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 app.Run();
 

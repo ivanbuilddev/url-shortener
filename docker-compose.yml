@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: UrlShortener/Dockerfile
+    container_name: urlshortener-backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5112
+      - ConnectionStrings__DefaultConnection=Data Source=data/url-shortener.db
+      - Redis__ConnectionString=redis:6379
+      - Cors__AllowedOrigins__0=http://localhost:5157
+    ports:
+      - "5112:5112"
+    volumes:
+      - db-data:/app/data
+    user: root # Ensure SQLite has permissions to read/write the database file
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: .
+      dockerfile: UrlShortener.Frontend/Dockerfile
+    container_name: urlshortener-frontend
+    environment:
+      - BACKEND_URL=http://localhost:5112
+    ports:
+      - "5157:5157"
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:alpine
+    container_name: urlshortener-cache
+    expose:
+      - "6379"
+
+volumes:
+  db-data:

@@ -7,7 +7,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5112") });
+var backendUrl = builder.Configuration["BackendUrl"] ?? "http://localhost:5112";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(backendUrl) });
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
 builder.Services.AddScoped<IUrlService, UrlService>();
